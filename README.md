@@ -74,10 +74,5 @@ To analyze a different stock:
    - For NSE stocks: Use `.NS` suffix (e.g., "TCS.NS")
    - For BSE stocks: Use `.BO` suffix (e.g., "TCS.BO")
 
-## Contributing
-
-Feel free to fork this repository and submit pull requests. You can also open issues for bugs or feature requests.
-
-## License
-
-This project is open source and available for anyone to use and modify.
+## Pipeline Status
+[![Stock Analysis Pipeline](https://github.com/Yogesh17IITM/Stock-analysis/actions/workflows/python-app.yml/badge.svg)](https://github.com/Yogesh17IITM/Stock-analysis/actions/workflows/python-app.yml)
