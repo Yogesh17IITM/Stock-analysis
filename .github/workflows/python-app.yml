@@ -9,7 +9,7 @@ on:
   pull_request:
     branches: ["master"]
   schedule:
-    - cron: '0 0 * * *'  # Run daily at midnight UTC
+    - cron: "0 0 * * *" # Run daily at midnight UTC
 
 permissions:
   contents: read
@@ -89,7 +89,7 @@ jobs:
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
           subject: Daily Stock Analysis Report - ${{ github.repository }}
-          to: yogeshwaranrubin@gmail.com
+          to: yogeshwaranrubin@gmail.com,lakshmipriyamahadevan@gmail.com
           from: GitHub Actions
           html_body: file://email_content.html
           attachments: samples/stock_analysis_output.png
