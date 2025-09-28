@@ -5,60 +5,91 @@ name: Stock Analysis Pipeline
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
+  schedule:
+    - cron: '0 0 * * *'  # Run daily at midnight UTC
 
 permissions:
   contents: read
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.10"
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install flake8 pytest
-        pip install yfinance pandas matplotlib numpy
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    
-    - name: Validate Python script
-      run: |
-        python -m py_compile test.py
-    
-    - name: Display Stock Analysis Information
-      run: |
-        echo "Stock Analysis Tool Information:"
-        echo "==============================="
-        cat README.md
-    
-    - name: Create test configuration
-      run: |
-        echo 'STOCK_TICKERS = "RELIANCE.NS"' > config.rb
-        echo 'ANALYSIS_PERIOD = 30' >> config.rb
-        echo 'DATA_INTERVAL = "1d"' >> config.rb
-        echo 'PLOTS_PER_ROW = 2' >> config.rb
-    
-    - name: Test stock analysis script
-      run: |
-        # Run in headless mode since we're in CI environment
-        export MPLBACKEND=Agg
-        python test.py
-        # Verify the output image was created
-        test -f "samples/stock_analysis_output.png" && echo "✅ Visualization generated successfully" || echo "❌ Visualization failed"
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest
+          pip install yfinance pandas matplotlib numpy
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Lint with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Validate Python script
+        run: |
+          python -m py_compile test.py
+
+      - name: Display Stock Analysis Information
+        run: |
+          echo "Stock Analysis Tool Information:"
+          echo "==============================="
+          cat README.md
+
+      - name: Create test configuration
+        run: |
+          echo 'STOCK_TICKERS = "RELIANCE.NS, TCS.NS, INFY.NS"' > config.rb
+          echo 'ANALYSIS_PERIOD = 30' >> config.rb
+          echo 'DATA_INTERVAL = "1d"' >> config.rb
+          echo 'PLOTS_PER_ROW = 2' >> config.rb
+
+      - name: Test stock analysis script
+        id: analysis
+        run: |
+          # Run in headless mode since we're in CI environment
+          export MPLBACKEND=Agg
+          python test.py
+          if [ -f "samples/stock_analysis_output.png" ]; then
+            echo "analysis_success=true" >> $GITHUB_OUTPUT
+            echo "✅ Visualization generated successfully"
+          else
+            echo "analysis_success=false" >> $GITHUB_OUTPUT
+            echo "❌ Visualization failed"
+            exit 1
+          fi
+
+      - name: Generate Email Content
+        if: steps.analysis.outputs.analysis_success == 'true'
+        run: |
+          echo "Stock Analysis Report for $(date +'%Y-%m-%d')" > email_content.html
+          echo "<h2>Stock Analysis Results</h2>" >> email_content.html
+          echo "<p>Analysis completed successfully. Please find the visualization attached.</p>" >> email_content.html
+          echo "<p>Analyzed stocks: RELIANCE.NS, TCS.NS, INFY.NS</p>" >> email_content.html
+          echo "<p>Analysis period: 30 days</p>" >> email_content.html
+
+      - name: Send email
+        if: steps.analysis.outputs.analysis_success == 'true'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: Daily Stock Analysis Report - ${{ github.repository }}
+          to: yogeshwaranrubin@gmail.com
+          from: GitHub Actions
+          html_body: file://email_content.html
+          attachments: samples/stock_analysis_output.png
