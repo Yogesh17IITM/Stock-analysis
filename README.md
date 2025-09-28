@@ -1,6 +1,8 @@
 # Stock Analysis Tool
 
-This Python script helps you analyze stock data to find the optimal days for buying and selling stocks to maximize profit. The tool currently focuses on analyzing Reliance Industries stock (RELIANCE.NS) but can be modified for any stock listed on NSE or BSE.
+This Python script helps you analyze multiple stocks simultaneously to find the optimal days for buying and selling to maximize profit. The tool works with any stocks listed on NSE or BSE, providing comparative analysis and visualization.
+
+![Sample Analysis](samples/stock_analysis_sample.png)
 
 ## Features
 
@@ -27,21 +29,25 @@ pip install yfinance pandas matplotlib
 ## Usage
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/Yogesh17IITM/Stock-analysis.git
 ```
 
 2. Navigate to the project directory:
+
 ```bash
 cd Stock-analysis
 ```
 
 3. Run the script:
+
 ```bash
 python test.py
 ```
 
 The script will:
+
 - Download the last 30 days of stock data
 - Display a detailed price table
 - Show the best days to buy and sell
@@ -51,6 +57,7 @@ The script will:
 ## Example Output
 
 The script provides:
+
 - Comprehensive stock data table with daily prices
 - Trading analysis results showing:
   - Best day to buy with price
@@ -61,6 +68,7 @@ The script provides:
 ## Customization
 
 To analyze a different stock:
+
 1. Open `test.py`
 2. Modify the `ticker` variable:
    - For NSE stocks: Use `.NS` suffix (e.g., "TCS.NS")
