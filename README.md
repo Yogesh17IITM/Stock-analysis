@@ -2,7 +2,7 @@
 
 This Python script helps you analyze multiple stocks simultaneously to find the optimal days for buying and selling to maximize profit. The tool works with any stocks listed on NSE or BSE, providing comparative analysis and visualization.
 
-![Sample Analysis](samples/stock_analysis_sample.png)
+![Sample Analysis](samples/stock_analysis_output.png)
 
 ## Features
 
