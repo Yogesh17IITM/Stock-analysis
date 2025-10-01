@@ -52,7 +52,7 @@ jobs:
       - name: Create test configuration
         run: |
           echo 'STOCK_TICKERS = "RELIANCE.NS, TCS.NS, INFY.NS"' > config.rb
-          echo 'ANALYSIS_PERIOD = 30' >> config.rb
+          echo 'ANALYSIS_PERIOD = 7' >> config.rb
           echo 'DATA_INTERVAL = "1d"' >> config.rb
           echo 'PLOTS_PER_ROW = 2' >> config.rb
 
@@ -62,23 +62,37 @@ jobs:
           # Run in headless mode since we're in CI environment
           export MPLBACKEND=Agg
           python test.py
-          if [ -f "samples/stock_analysis_output.png" ]; then
+          # Check if any plots were generated
+          if [ -d "samples/individual_plots" ] && [ "$(ls -A samples/individual_plots/*.png 2>/dev/null)" ]; then
             echo "analysis_success=true" >> $GITHUB_OUTPUT
-            echo "✅ Visualization generated successfully"
+            echo "✅ Stock analysis visualizations generated successfully"
           else
             echo "analysis_success=false" >> $GITHUB_OUTPUT
-            echo "❌ Visualization failed"
+            echo "❌ Stock analysis visualization failed"
             exit 1
           fi
 
       - name: Generate Email Content
         if: steps.analysis.outputs.analysis_success == 'true'
         run: |
-          echo "Stock Analysis Report for $(date +'%Y-%m-%d')" > email_content.html
-          echo "<h2>Stock Analysis Results</h2>" >> email_content.html
-          echo "<p>Analysis completed successfully. Please find the visualization attached.</p>" >> email_content.html
-          echo "<p>Analyzed stocks: RELIANCE.NS, TCS.NS, INFY.NS</p>" >> email_content.html
-          echo "<p>Analysis period: 30 days</p>" >> email_content.html
+          # Create HTML email content
+          echo "<html><body>" > email_content.html
+          echo "<h2>Stock Analysis Report for $(date +'%Y-%m-%d')</h2>" >> email_content.html
+          echo "<p>Analysis completed successfully. Please find the analysis results below.</p>" >> email_content.html
+          echo "<p><strong>Analyzed stocks:</strong> RELIANCE.NS, TCS.NS, INFY.NS</p>" >> email_content.html
+          echo "<p><strong>Analysis period:</strong> 7 days</p>" >> email_content.html
+          echo "<h3>Individual Stock Analysis Results:</h3>" >> email_content.html
+          
+          # Add analysis results from text files
+          for file in samples/individual_plots/*_analysis.txt; do
+            if [ -f "$file" ]; then
+              echo "<pre style='background-color: #f5f5f5; padding: 10px; border-radius: 5px;'>" >> email_content.html
+              cat "$file" >> email_content.html
+              echo "</pre><br>" >> email_content.html
+            fi
+          done
+          
+          echo "</body></html>" >> email_content.html
 
       - name: Send email
         if: steps.analysis.outputs.analysis_success == 'true'
@@ -92,4 +106,4 @@ jobs:
           to: yogeshwaranrubin@gmail.com,lakshmipriyamahadevan@gmail.com
           from: GitHub Actions
           html_body: file://email_content.html
-          attachments: samples/stock_analysis_output.png
+          attachments: samples/individual_plots/*.png

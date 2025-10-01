@@ -1,6 +1,7 @@
 import yfinance as yf
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as path_effects
 import math
 import numpy as np
 import os
@@ -53,6 +54,67 @@ def read_config():
                 config[key] = value
     return config
 
+def plot_stock_data(data, ticker, ax, result):
+    """
+    Plot stock data and analysis results on the given axes
+    
+    Args:
+        data (pd.DataFrame): Stock price data
+        ticker (str): Stock ticker symbol
+        ax (matplotlib.axes.Axes): Matplotlib axes object for plotting
+        result (dict): Analysis results including buy/sell points and profit
+    """
+    # Plot basic price data with improved styling
+    ax.plot(data.index, data['Close'], marker='o', markersize=4, 
+            linestyle='-', linewidth=1.5, label='Closing Price', 
+            color='#2E86C1')
+    
+    if result['profit'] > 0:
+        # Plot buy and sell points with enhanced visibility
+        ax.plot(result['buy_date'], result['buy_price'], 'g^', markersize=15, label='Buy Point',
+                path_effects=[path_effects.withStroke(linewidth=2, foreground='white')])
+        ax.plot(result['sell_date'], result['sell_price'], 'rv', markersize=15, label='Sell Point',
+                path_effects=[path_effects.withStroke(linewidth=2, foreground='white')])
+        
+        # Add annotations with improved styling
+        ax.annotate(f'Buy: Rs.{result["buy_price"]:.2f}', 
+                   xy=(result['buy_date'], result['buy_price']),
+                   xytext=(10, -20),
+                   textcoords='offset points',
+                   ha='left',
+                   bbox=dict(boxstyle='round,pad=0.5', fc='#A2D9CE', ec='green', alpha=0.7),
+                   arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0', color='green'))
+        
+        ax.annotate(f'Sell: Rs.{result["sell_price"]:.2f}', 
+                   xy=(result['sell_date'], result['sell_price']),
+                   xytext=(10, 20),
+                   textcoords='offset points',
+                   ha='left',
+                   bbox=dict(boxstyle='round,pad=0.5', fc='#F5B7B1', ec='red', alpha=0.7),
+                   arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0', color='red'))
+        
+        # Add profit annotation with improved visibility
+        mid_date = result['buy_date'] + (result['sell_date'] - result['buy_date'])/2
+        mid_price = (result['buy_price'] + result['sell_price'])/2
+        ax.annotate(f'Profit: Rs.{result["profit"]:.2f}\n(+{result["profit_percentage"]:.1f}%)', 
+                   xy=(mid_date, mid_price),
+                   xytext=(0, 30),
+                   textcoords='offset points',
+                   ha='center',
+                   bbox=dict(boxstyle='round,pad=0.5', fc='#D4E6F1', ec='blue', alpha=0.7),
+                   arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0', color='blue'))
+    
+    # Enhanced plot styling
+    ax.set_title(f"{ticker} Trading Analysis", fontsize=12, fontweight='bold', pad=15)
+    ax.set_xlabel("Date", fontsize=10, labelpad=10)
+    ax.set_ylabel("Price (INR)", fontsize=10, labelpad=10)
+    ax.grid(True, linestyle='--', alpha=0.7)
+    ax.tick_params(axis='x', rotation=45)
+    
+    # Add legend with improved placement
+    ax.legend(loc='upper left', bbox_to_anchor=(0, -0.1), 
+             ncol=3, frameon=True, fancybox=True, shadow=True)
+
 def analyze_and_plot_stock(data, ticker, ax):
     """
     Analyze and plot trading opportunities for a single stock
@@ -67,11 +129,6 @@ def analyze_and_plot_stock(data, ticker, ax):
     """
     # Find best trading days
     buy_date, sell_date, max_profit = find_best_days_to_trade(data['Close'])
-    
-    # Plot basic price data with improved styling
-    ax.plot(data.index, data['Close'], marker='o', markersize=4, 
-            linestyle='-', linewidth=1.5, label='Closing Price', 
-            color='#2E86C1')
     
     result = {
         'ticker': ticker,
@@ -98,85 +155,52 @@ def analyze_and_plot_stock(data, ticker, ax):
             'profit': profit,
             'profit_percentage': profit_percentage
         })
-        
-        # Plot buy and sell points with enhanced visibility
-        ax.plot(buy_date, buy_price, 'g^', markersize=15, label='Buy Point',
-                path_effects=[plt.matplotlib.patheffects.withStroke(linewidth=2, foreground='white')])
-        ax.plot(sell_date, sell_price, 'rv', markersize=15, label='Sell Point',
-                path_effects=[plt.matplotlib.patheffects.withStroke(linewidth=2, foreground='white')])
-        
-        # Add annotations with improved styling
-        ax.annotate(f'Buy: ₹{buy_price:.2f}', 
-                   xy=(buy_date, buy_price),
-                   xytext=(10, -20),
-                   textcoords='offset points',
-                   ha='left',
-                   bbox=dict(boxstyle='round,pad=0.5', fc='#A2D9CE', ec='green', alpha=0.7),
-                   arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0', color='green'))
-        
-        ax.annotate(f'Sell: ₹{sell_price:.2f}', 
-                   xy=(sell_date, sell_price),
-                   xytext=(10, 20),
-                   textcoords='offset points',
-                   ha='left',
-                   bbox=dict(boxstyle='round,pad=0.5', fc='#F5B7B1', ec='red', alpha=0.7),
-                   arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0', color='red'))
-        
-        # Add profit annotation with improved visibility
-        mid_date = buy_date + (sell_date - buy_date)/2
-        mid_price = (buy_price + sell_price)/2
-        ax.annotate(f'Profit: ₹{profit:.2f}\n(+{profit_percentage:.1f}%)', 
-                   xy=(mid_date, mid_price),
-                   xytext=(0, 30),
-                   textcoords='offset points',
-                   ha='center',
-                   bbox=dict(boxstyle='round,pad=0.5', fc='#D4E6F1', ec='blue', alpha=0.7),
-                   arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0', color='blue'))
     
-    # Enhanced plot styling
-    ax.set_title(f"{ticker} Trading Analysis", fontsize=12, fontweight='bold', pad=15)
-    ax.set_xlabel("Date", fontsize=10, labelpad=10)
-    ax.set_ylabel("Price (INR)", fontsize=10, labelpad=10)
-    ax.grid(True, linestyle='--', alpha=0.7)
-    ax.tick_params(axis='x', rotation=45)
-    
-    # Add legend with improved placement
-    ax.legend(loc='upper left', bbox_to_anchor=(0, -0.1), 
-             ncol=3, frameon=True, fancybox=True, shadow=True)
-    
-    # Save individual stock plot
-    plt.figure(figsize=(10, 6))
-    plt.subplot(111)
-    analyze_and_plot_stock(data, ticker, plt.gca())  # Recursive call for individual plot
-    plt.tight_layout()
+    # Plot the stock data on the provided axes
+    plot_stock_data(data, ticker, ax, result)
     
     # Create directory if it doesn't exist
     os.makedirs('samples/individual_plots', exist_ok=True)
     
-    # Save individual plot with high DPI
-    plt.savefig(f'samples/individual_plots/{ticker.replace(".", "_")}.png', 
-                dpi=300, bbox_inches='tight', pad_inches=0.2)
-    plt.close()  # Close individual plot
+    # Save individual stock plot with proper figure management
+    individual_fig = plt.figure(figsize=(10, 6))
+    individual_ax = individual_fig.add_subplot(111)
     
-    # Write analysis results to text file
-    with open(f'samples/individual_plots/{ticker.replace(".", "_")}_analysis.txt', 'w') as f:
+    # Plot on the individual figure without recursive call
+    plot_stock_data(data, ticker, individual_ax, result)
+    
+    individual_fig.tight_layout()
+    
+    # Save individual plot with high DPI
+    individual_fig.savefig(f'samples/individual_plots/{ticker.replace(".", "_")}.png', 
+                          dpi=300, bbox_inches='tight', pad_inches=0.2)
+    plt.close(individual_fig)  # Close individual plot immediately
+    
+    # Write analysis results to text file with UTF-8 encoding
+    with open(f'samples/individual_plots/{ticker.replace(".", "_")}_analysis.txt', 'w', encoding='utf-8') as f:
         f.write(f"Analysis Results for {ticker}\n")
         f.write("=" * 50 + "\n")
         f.write(f"Analysis Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write(f"Data Period: {data.index[0].strftime('%Y-%m-%d')} to {data.index[-1].strftime('%Y-%m-%d')}\n\n")
         
         if max_profit > 0:
-            f.write(f"Best day to buy: {buy_date.strftime('%Y-%m-%d')} at ₹{buy_price:.2f}\n")
-            f.write(f"Best day to sell: {sell_date.strftime('%Y-%m-%d')} at ₹{sell_price:.2f}\n")
-            f.write(f"Maximum profit per share: ₹{profit:.2f} ({profit_percentage:.1f}%)\n")
+            f.write(f"Best day to buy: {buy_date.strftime('%Y-%m-%d')} at Rs.{buy_price:.2f}\n")
+            f.write(f"Best day to sell: {sell_date.strftime('%Y-%m-%d')} at Rs.{sell_price:.2f}\n")
+            f.write(f"Maximum profit per share: Rs.{profit:.2f} ({profit_percentage:.1f}%)\n")
         else:
             f.write("No profitable trading opportunity found in this period\n")
         
+        # Calculate statistics
+        avg_price = float(data['Close'].mean())
+        min_price = float(data['Close'].min())
+        max_price = float(data['Close'].max())
+        volatility = float(data['Close'].std())
+        
         f.write("\nPrice Statistics:\n")
-        f.write(f"Average Price: ₹{data['Close'].mean():.2f}\n")
-        f.write(f"Minimum Price: ₹{data['Close'].min():.2f}\n")
-        f.write(f"Maximum Price: ₹{data['Close'].max():.2f}\n")
-        f.write(f"Price Volatility: {data['Close'].std():.2f}\n")
+        f.write(f"Average Price: Rs.{avg_price:.2f}\n")
+        f.write(f"Minimum Price: Rs.{min_price:.2f}\n")
+        f.write(f"Maximum Price: Rs.{max_price:.2f}\n")
+        f.write(f"Price Volatility: {volatility:.2f}\n")
     
     return result
 
@@ -210,8 +234,8 @@ def main():
     for idx, ticker in enumerate(tickers):
         print(f"\nAnalyzing {ticker}...")
         
-        # Download stock data
-        data = yf.download(ticker, period=period, interval=interval, progress=False)
+        # Download stock data with explicit auto_adjust parameter
+        data = yf.download(ticker, period=period, interval=interval, progress=False, auto_adjust=True)
         
         # Analyze and plot
         result = analyze_and_plot_stock(data, ticker, axes[idx])
@@ -219,9 +243,9 @@ def main():
         
         # Print results
         if result['profit'] > 0:
-            print(f"Best day to buy: {result['buy_date'].strftime('%Y-%m-%d')} at ₹{result['buy_price']:.2f}")
-            print(f"Best day to sell: {result['sell_date'].strftime('%Y-%m-%d')} at ₹{result['sell_price']:.2f}")
-            print(f"Maximum profit per share: ₹{result['profit']:.2f} ({result['profit_percentage']:.1f}%)")
+            print(f"Best day to buy: {result['buy_date'].strftime('%Y-%m-%d')} at Rs.{result['buy_price']:.2f}")
+            print(f"Best day to sell: {result['sell_date'].strftime('%Y-%m-%d')} at Rs.{result['sell_price']:.2f}")
+            print(f"Maximum profit per share: Rs.{result['profit']:.2f} ({result['profit_percentage']:.1f}%)")
         else:
             print("No profitable trading opportunity found in this period")
     
@@ -239,7 +263,7 @@ def main():
     sorted_results = sorted(results, key=lambda x: x['profit_percentage'], reverse=True)
     for result in sorted_results:
         if result['profit'] > 0:
-            print(f"{result['ticker']}: Potential profit ₹{result['profit']:.2f} ({result['profit_percentage']:.1f}%)")
+            print(f"{result['ticker']}: Potential profit Rs.{result['profit']:.2f} ({result['profit_percentage']:.1f}%)")
 
 if __name__ == "__main__":
     main()
