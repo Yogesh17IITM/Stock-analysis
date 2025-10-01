@@ -9,7 +9,8 @@ on:
   pull_request:
     branches: ["master"]
   schedule:
-    - cron: "0 0 * * *" # Run daily at midnight UTC
+    - cron: "30 4 * * *"  # 10:00 AM IST
+    - cron: "30 10 * * *" # 4:00 PM IST
 
 permissions:
   contents: read
@@ -77,12 +78,12 @@ jobs:
         run: |
           # Create HTML email content
           echo "<html><body>" > email_content.html
-          echo "<h2>Stock Analysis Report for $(date +'%Y-%m-%d')</h2>" >> email_content.html
+          echo "<h2>Stock Analysis Report for $(date +'%Y-%m-%d %H:%M %Z')</h2>" >> email_content.html
           echo "<p>Analysis completed successfully. Please find the analysis results below.</p>" >> email_content.html
           echo "<p><strong>Analyzed stocks:</strong> RELIANCE.NS, TCS.NS, INFY.NS</p>" >> email_content.html
           echo "<p><strong>Analysis period:</strong> 7 days</p>" >> email_content.html
           echo "<h3>Individual Stock Analysis Results:</h3>" >> email_content.html
-          
+
           # Add analysis results from text files
           for file in samples/individual_plots/*_analysis.txt; do
             if [ -f "$file" ]; then
@@ -91,7 +92,7 @@ jobs:
               echo "</pre><br>" >> email_content.html
             fi
           done
-          
+
           echo "</body></html>" >> email_content.html
 
       - name: Send email
