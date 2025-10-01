@@ -49,13 +49,9 @@ jobs:
           echo "Stock Analysis Tool Information:"
           echo "==============================="
           cat README.md
-
-      - name: Create test configuration
-        run: |
-          echo 'STOCK_TICKERS = "RELIANCE.NS, TCS.NS, INFY.NS"' > config.rb
-          echo 'ANALYSIS_PERIOD = 7' >> config.rb
-          echo 'DATA_INTERVAL = "1d"' >> config.rb
-          echo 'PLOTS_PER_ROW = 2' >> config.rb
+          echo -e "\nCurrent Configuration:"
+          echo "==================="
+          cat config.rb
 
       - name: Test stock analysis script
         id: analysis
@@ -80,8 +76,10 @@ jobs:
           echo "<html><body>" > email_content.html
           echo "<h2>Stock Analysis Report for $(date +'%Y-%m-%d %H:%M %Z')</h2>" >> email_content.html
           echo "<p>Analysis completed successfully. Please find the analysis results below.</p>" >> email_content.html
-          echo "<p><strong>Analyzed stocks:</strong> RELIANCE.NS, TCS.NS, INFY.NS</p>" >> email_content.html
-          echo "<p><strong>Analysis period:</strong> 7 days</p>" >> email_content.html
+          echo "<h3>Configuration:</h3>" >> email_content.html
+          echo "<pre style='background-color: #f5f5f5; padding: 10px; border-radius: 5px;'>" >> email_content.html
+          cat config.rb >> email_content.html
+          echo "</pre>" >> email_content.html
           echo "<h3>Individual Stock Analysis Results:</h3>" >> email_content.html
 
           # Add analysis results from text files
