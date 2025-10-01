@@ -5,10 +5,10 @@
 # - Use .NS suffix for NSE stocks (e.g., "RELIANCE.NS")
 # - Use .BO suffix for BSE stocks (e.g., "TCS.BO")
 # Example: "RELIANCE.NS, TCS.NS, INFY.NS"
-STOCK_TICKERS = "RELIANCE.NS, TCS.NS, INFY.NS"
+STOCK_TICKERS = "RELIANCE.NS, TCS.NS, INFY.NS, BEL.NS, HDFCBANK.NS"
 
 # Analysis period in days (e.g., 30, 60, 90)
-ANALYSIS_PERIOD = 30
+ANALYSIS_PERIOD = 7
 
 # Data interval (1d for daily)
 DATA_INTERVAL = "1d"
