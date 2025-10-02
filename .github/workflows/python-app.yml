@@ -9,20 +9,32 @@ on:
   pull_request:
     branches: ["master"]
   schedule:
-    - cron: '30 4 * * 1-5' # 10:00 AM IST (weekdays only)
-    - cron: '30 9 * * 1-5' # 3:00 PM IST (weekdays only)
+    - cron: "45 4 * * 1-5" # 9:30 AM IST (weekdays)
+    - cron: "30 9 * * 1-5" # 3:00 PM IST (weekdays)
+  workflow_dispatch: # Allow manual triggering
 
 permissions:
   contents: read
+  actions: write # Required for workflow operations
 
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      TZ: 'Asia/Kolkata'  # Set timezone to IST for consistent timestamps
+      TZ: "Asia/Kolkata" # Set timezone to IST
+      PYTHONUNBUFFERED: "1" # Ensure Python output is not buffered
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.11.0
+        with:
+          access_token: ${{ github.token }}
+
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for proper tracking
+
       - name: Set up Python 3.10
         uses: actions/setup-python@v3
         with:
@@ -34,6 +46,12 @@ jobs:
           pip install flake8 pytest
           pip install yfinance pandas matplotlib numpy
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Verify Python Environment
+        run: |
+          python --version
+          pip list
+          date  # Verify timezone settings
 
       - name: Lint with flake8
         run: |
