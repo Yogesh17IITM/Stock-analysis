@@ -9,9 +9,13 @@ on:
   pull_request:
     branches: ["master"]
   schedule:
-    - cron: "50 4 * * 1-5" # 9:30 AM IST (weekdays)
+    - cron: "05 5 * * 1-5" # 10:35 AM IST (weekdays)
     - cron: "30 9 * * 1-5" # 3:00 PM IST (weekdays)
   workflow_dispatch: # Allow manual triggering
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -26,11 +30,6 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.11.0
-        with:
-          access_token: ${{ github.token }}
-
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Fetch all history for proper tracking
