@@ -11,7 +11,7 @@ on:
   schedule:
     - cron: "05 5 * * 1-5" # 10:35 AM IST (weekdays)
     - cron: "30 9 * * 1-5" # 3:00 PM IST (weekdays)
-    - cron: "*/5 * * * *" # Every 5 minutes (for testing purposes)
+    - cron: "*/15 * * * *" # Every 15 minutes (for testing purposes)
   workflow_dispatch: # Allow manual triggering
 
 concurrency:
