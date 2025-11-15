@@ -5,6 +5,12 @@ import matplotlib.patheffects as path_effects
 import math
 import numpy as np
 import os
+import sys
+
+# Handle Unicode encoding for Windows terminals
+if sys.platform == 'win32':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 def find_best_days_to_trade(prices):
     """
@@ -104,8 +110,12 @@ def plot_stock_data(data, ticker, ax, result):
                    bbox=dict(boxstyle='round,pad=0.5', fc='#D4E6F1', ec='blue', alpha=0.7),
                    arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0', color='blue'))
     
-    # Enhanced plot styling
-    ax.set_title(f"{ticker} Trading Analysis", fontsize=12, fontweight='bold', pad=15)
+    # Enhanced plot styling with yearly low in title
+    yearly_low_info = ""
+    if result.get('yearly_low_price', 0) > 0:
+        yearly_low_info = f" | 52-Week Low: Rs.{result['yearly_low_price']:.2f}"
+    
+    ax.set_title(f"{ticker} Trading Analysis{yearly_low_info}", fontsize=12, fontweight='bold', pad=15)
     ax.set_xlabel("Date", fontsize=10, labelpad=10)
     ax.set_ylabel("Price (INR)", fontsize=10, labelpad=10)
     ax.grid(True, linestyle='--', alpha=0.7)
@@ -130,6 +140,13 @@ def analyze_and_plot_stock(data, ticker, ax):
     # Find best trading days
     buy_date, sell_date, max_profit = find_best_days_to_trade(data['Close'])
     
+    # Fetch full 1-year data to find the true yearly (52-week) low
+    yearly_data = yf.download(ticker, period="1y", interval="1d", progress=False, auto_adjust=True)
+    yearly_low_price = float(yearly_data['Close'].min()) if len(yearly_data) > 0 else 0
+    yearly_low_date_raw = yearly_data['Close'].idxmin()
+    # Convert Series to scalar if needed
+    yearly_low_date = yearly_low_date_raw.iloc[0] if isinstance(yearly_low_date_raw, pd.Series) else yearly_low_date_raw
+    
     result = {
         'ticker': ticker,
         'buy_date': None,
@@ -137,7 +154,9 @@ def analyze_and_plot_stock(data, ticker, ax):
         'buy_price': 0,
         'sell_price': 0,
         'profit': 0,
-        'profit_percentage': 0
+        'profit_percentage': 0,
+        'yearly_low_date': yearly_low_date,
+        'yearly_low_price': yearly_low_price
     }
     
     if max_profit > 0:
@@ -182,6 +201,11 @@ def analyze_and_plot_stock(data, ticker, ax):
         f.write("=" * 50 + "\n")
         f.write(f"Analysis Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write(f"Data Period: {data.index[0].strftime('%Y-%m-%d')} to {data.index[-1].strftime('%Y-%m-%d')}\n\n")
+        
+        # Yearly low information
+        if result['yearly_low_date'] is not None:
+            yearly_low_date_str = pd.Timestamp(result['yearly_low_date']).strftime('%Y-%m-%d')
+            f.write(f"Yearly Low (52-week low): Rs.{result['yearly_low_price']:.2f} on {yearly_low_date_str}\n\n")
         
         if max_profit > 0:
             f.write(f"Best day to buy: {buy_date.strftime('%Y-%m-%d')} at Rs.{buy_price:.2f}\n")
